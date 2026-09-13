@@ -136,11 +136,9 @@ function App() {
         [payload.fromColumn]: sourceItems,
       }
 
-      const destinationItems = [...next[targetColumn]]
-      const adjustedIndex =
-        payload.fromColumn === targetColumn && sourceIndex < targetIndex
-          ? targetIndex - 1
-          : targetIndex
+      const isSameColumn = payload.fromColumn === targetColumn
+      const adjustedIndex = isSameColumn && sourceIndex < targetIndex ? targetIndex - 1 : targetIndex
+      const destinationItems = isSameColumn ? sourceItems : [...next[targetColumn]]
 
       destinationItems.splice(adjustedIndex, 0, movingItem)
       next[targetColumn] = destinationItems
