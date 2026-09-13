@@ -7,6 +7,7 @@ type ColumnId = 'todo' | 'doing' | 'done'
 type Character = {
   id: string
   name: string
+  image: string
 }
 
 type Item = {
@@ -14,6 +15,7 @@ type Item = {
   title: string
   characterId: string
   characterName: string
+  characterImage: string
 }
 
 type DragPayload = {
@@ -63,6 +65,7 @@ function App() {
                   results {
                     id
                     name
+                    image
                   }
                 }
               }
@@ -113,16 +116,27 @@ function App() {
   )
 
   const characterMap = useMemo(
-    () => new Map(characters.map((character) => [character.id, character.name])),
+    () => new Map(characters.map((character) => [character.id, character])),
     [characters],
   )
+
+  const triggerCelebration = () => {
+    setDoneBurst((value) => value + 1)
+    setIsCelebrating(true)
+    if (celebrationTimeoutRef.current !== null) {
+      window.clearTimeout(celebrationTimeoutRef.current)
+    }
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setIsCelebrating(false)
+    }, 700)
+  }
 
   const moveItem = (
     payload: DragPayload,
     targetColumn: ColumnId,
     targetIndex: number,
   ) => {
-    let didMove = false
+    const shouldCelebrate = targetColumn === 'done' && payload.fromColumn !== 'done'
 
     setItemsByColumn((current) => {
       const sourceItems = [...current[payload.fromColumn]]
@@ -145,21 +159,12 @@ function App() {
 
       destinationItems.splice(adjustedIndex, 0, movingItem)
       next[targetColumn] = destinationItems
-      didMove = true
+      if (shouldCelebrate) {
+        queueMicrotask(triggerCelebration)
+      }
 
       return next
     })
-
-    if (didMove && targetColumn === 'done' && payload.fromColumn !== 'done') {
-      setDoneBurst((value) => value + 1)
-      setIsCelebrating(true)
-      if (celebrationTimeoutRef.current !== null) {
-        window.clearTimeout(celebrationTimeoutRef.current)
-      }
-      celebrationTimeoutRef.current = window.setTimeout(() => {
-        setIsCelebrating(false)
-      }, 500)
-    }
   }
 
   const handleDrop = (
@@ -188,8 +193,8 @@ function App() {
       return
     }
 
-    const characterName = characterMap.get(selectedCharacterId)
-    if (!characterName) {
+    const character = characterMap.get(selectedCharacterId)
+    if (!character) {
       return
     }
 
@@ -201,7 +206,8 @@ function App() {
           id: crypto.randomUUID(),
           title: newTitle.trim(),
           characterId: selectedCharacterId,
-          characterName,
+          characterName: character.name,
+          characterImage: character.image,
         },
       ],
     }))
@@ -325,7 +331,17 @@ function App() {
                     aria-label={`Task ${item.title}. Use arrow keys to reorder or move columns.`}
                   >
                     <strong>{item.title}</strong>
-                    <span>{item.characterName}</span>
+                    <span className="card-character">
+                      <img
+                        className="card-avatar"
+                        src={item.characterImage}
+                        alt={item.characterName}
+                        loading="lazy"
+                        width={28}
+                        height={28}
+                      />
+                      {item.characterName}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -334,9 +350,20 @@ function App() {
         })}
 
         <div className="confetti" aria-hidden>
-          {Array.from({ length: 14 }).map((_, index) => (
-            <span key={`burst-${doneBurst}-${index}`} style={{ '--i': `${index}` } as CSSProperties}>
-              ✨
+          {Array.from({ length: 32 }).map((_, index) => (
+            <span
+              key={`burst-${doneBurst}-${index}`}
+              className="confetti-piece"
+              style={
+                {
+                  '--i': `${index}`,
+                  '--delay': `${(index % 8) * 45}ms`,
+                  '--duration': `${700 + (index % 5) * 120}ms`,
+                  '--x': `${(index % 11) * 9 - 45}px`,
+                } as CSSProperties
+              }
+            >
+              {['🎉', '✨', '🎊', '🌟', '💫', '🎈', '🥳', '⭐'][index % 8]}
             </span>
           ))}
         </div>
