@@ -204,9 +204,14 @@ function App() {
   }
 
   const moveByKeyboard = (columnId: ColumnId, index: number, key: string) => {
+    const item = itemsByColumn[columnId][index]
+    if (!item) {
+      return
+    }
+
     const payload: DragPayload = {
       fromColumn: columnId,
-      itemId: itemsByColumn[columnId][index].id,
+      itemId: item.id,
     }
 
     if (key === 'ArrowUp' && index > 0) {
@@ -238,27 +243,33 @@ function App() {
       <h1>Simple Kanban</h1>
 
       <form className="task-form" onSubmit={onCreateItem}>
-        <input
-          type="text"
-          placeholder="Task title"
-          value={newTitle}
-          onChange={(event) => setNewTitle(event.target.value)}
-          required
-        />
+        <label className="field">
+          <span>Task title</span>
+          <input
+            type="text"
+            placeholder="Task title"
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+            required
+          />
+        </label>
 
-        <select
-          value={selectedCharacterId}
-          onChange={(event) => setSelectedCharacterId(event.target.value)}
-          required
-          disabled={loadingCharacters}
-        >
-          <option value="">Assign a Rick & Morty character</option>
-          {characters.map((character) => (
-            <option key={character.id} value={character.id}>
-              {character.name}
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span>Character</span>
+          <select
+            value={selectedCharacterId}
+            onChange={(event) => setSelectedCharacterId(event.target.value)}
+            required
+            disabled={loadingCharacters}
+          >
+            <option value="">Assign a Rick & Morty character</option>
+            {characters.map((character) => (
+              <option key={character.id} value={character.id}>
+                {character.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <button type="submit" disabled={loadingCharacters || characters.length === 0}>
           Add item
