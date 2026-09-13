@@ -19,7 +19,6 @@ type Item = {
 type DragPayload = {
   fromColumn: ColumnId
   itemId: string
-  fromIndex: number
 }
 
 const columns: Array<{ id: ColumnId; title: string }> = [
@@ -124,13 +123,13 @@ function App() {
   ) => {
     setItemsByColumn((current) => {
       const sourceItems = [...current[payload.fromColumn]]
-      const movingItem = sourceItems[payload.fromIndex]
-
-      if (!movingItem || movingItem.id !== payload.itemId) {
+      const sourceIndex = sourceItems.findIndex((item) => item.id === payload.itemId)
+      if (sourceIndex < 0) {
         return current
       }
+      const movingItem = sourceItems[sourceIndex]
 
-      sourceItems.splice(payload.fromIndex, 1)
+      sourceItems.splice(sourceIndex, 1)
 
       const next = {
         ...current,
@@ -139,7 +138,7 @@ function App() {
 
       const destinationItems = [...next[targetColumn]]
       const adjustedIndex =
-        payload.fromColumn === targetColumn && payload.fromIndex < targetIndex
+        payload.fromColumn === targetColumn && sourceIndex < targetIndex
           ? targetIndex - 1
           : targetIndex
 
@@ -167,6 +166,7 @@ function App() {
     targetIndex: number,
   ) => {
     event.preventDefault()
+    event.stopPropagation()
 
     try {
       const payload = JSON.parse(event.dataTransfer.getData('text/plain')) as DragPayload
@@ -260,7 +260,6 @@ function App() {
                     onDragStart={(event) => {
                       const payload: DragPayload = {
                         fromColumn: column.id,
-                        fromIndex: index,
                         itemId: item.id,
                       }
                       event.dataTransfer.effectAllowed = 'move'
