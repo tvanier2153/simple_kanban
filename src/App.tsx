@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, DragEvent, FormEvent } from 'react'
 import './App.css'
 
@@ -42,6 +42,8 @@ function App() {
   const [loadingCharacters, setLoadingCharacters] = useState(false)
   const [characterError, setCharacterError] = useState('')
   const [doneBurst, setDoneBurst] = useState(0)
+  const [isCelebrating, setIsCelebrating] = useState(false)
+  const celebrationTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -90,7 +92,9 @@ function App() {
 
         setCharacterError('Could not load Rick and Morty characters.')
       } finally {
-        setLoadingCharacters(false)
+        if (!controller.signal.aborted) {
+          setLoadingCharacters(false)
+        }
       }
     }
 
@@ -98,6 +102,15 @@ function App() {
 
     return () => controller.abort()
   }, [])
+
+  useEffect(
+    () => () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+    },
+    [],
+  )
 
   const characterMap = useMemo(
     () => new Map(characters.map((character) => [character.id, character.name])),
@@ -138,6 +151,13 @@ function App() {
 
     if (targetColumn === 'done' && payload.fromColumn !== 'done') {
       setDoneBurst((value) => value + 1)
+      setIsCelebrating(true)
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+      celebrationTimeoutRef.current = window.setTimeout(() => {
+        setIsCelebrating(false)
+      }, 500)
     }
   }
 
@@ -219,7 +239,7 @@ function App() {
 
       {characterError ? <p className="error">{characterError}</p> : null}
 
-      <section className={`board ${doneBurst ? 'celebrate' : ''}`} key={doneBurst}>
+      <section className={`board ${isCelebrating ? 'celebrate' : ''}`}>
         {columns.map((column) => {
           const items = itemsByColumn[column.id]
 
