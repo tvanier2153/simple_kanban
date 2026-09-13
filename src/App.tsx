@@ -32,6 +32,7 @@ const initialItems: Record<ColumnId, Item[]> = {
   doing: [],
   done: [],
 }
+const dragDataType = 'application/x-simple-kanban-item'
 
 function App() {
   const [itemsByColumn, setItemsByColumn] = useState<Record<ColumnId, Item[]>>(initialItems)
@@ -121,6 +122,8 @@ function App() {
     targetColumn: ColumnId,
     targetIndex: number,
   ) => {
+    let didMove = false
+
     setItemsByColumn((current) => {
       const sourceItems = [...current[payload.fromColumn]]
       const sourceIndex = sourceItems.findIndex((item) => item.id === payload.itemId)
@@ -142,11 +145,12 @@ function App() {
 
       destinationItems.splice(adjustedIndex, 0, movingItem)
       next[targetColumn] = destinationItems
+      didMove = true
 
       return next
     })
 
-    if (targetColumn === 'done' && payload.fromColumn !== 'done') {
+    if (didMove && targetColumn === 'done' && payload.fromColumn !== 'done') {
       setDoneBurst((value) => value + 1)
       setIsCelebrating(true)
       if (celebrationTimeoutRef.current !== null) {
@@ -165,9 +169,12 @@ function App() {
   ) => {
     event.preventDefault()
     event.stopPropagation()
+    if (!event.dataTransfer.types.includes(dragDataType)) {
+      return
+    }
 
     try {
-      const payload = JSON.parse(event.dataTransfer.getData('text/plain')) as DragPayload
+      const payload = JSON.parse(event.dataTransfer.getData(dragDataType)) as DragPayload
       moveItem(payload, targetColumn, targetIndex)
     } catch {
       // ignore invalid drag payloads
@@ -311,7 +318,7 @@ function App() {
                         itemId: item.id,
                       }
                       event.dataTransfer.effectAllowed = 'move'
-                      event.dataTransfer.setData('text/plain', JSON.stringify(payload))
+                      event.dataTransfer.setData(dragDataType, JSON.stringify(payload))
                     }}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDrop(event, column.id, index)}
