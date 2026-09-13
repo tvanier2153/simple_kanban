@@ -203,6 +203,36 @@ function App() {
     setSelectedCharacterId('')
   }
 
+  const moveByKeyboard = (columnId: ColumnId, index: number, key: string) => {
+    const payload: DragPayload = {
+      fromColumn: columnId,
+      itemId: itemsByColumn[columnId][index].id,
+    }
+
+    if (key === 'ArrowUp' && index > 0) {
+      moveItem(payload, columnId, index - 1)
+      return
+    }
+
+    if (key === 'ArrowDown' && index < itemsByColumn[columnId].length - 1) {
+      moveItem(payload, columnId, index + 2)
+      return
+    }
+
+    const columnIndex = columns.findIndex((column) => column.id === columnId)
+    if (key === 'ArrowLeft' && columnIndex > 0) {
+      const targetColumn = columns[columnIndex - 1].id
+      const targetIndex = Math.min(index, itemsByColumn[targetColumn].length)
+      moveItem(payload, targetColumn, targetIndex)
+    }
+
+    if (key === 'ArrowRight' && columnIndex < columns.length - 1) {
+      const targetColumn = columns[columnIndex + 1].id
+      const targetIndex = Math.min(index, itemsByColumn[targetColumn].length)
+      moveItem(payload, targetColumn, targetIndex)
+    }
+  }
+
   return (
     <main className="app">
       <h1>Simple Kanban</h1>
@@ -255,6 +285,15 @@ function App() {
                     key={item.id}
                     className="card"
                     draggable
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                        return
+                      }
+
+                      event.preventDefault()
+                      moveByKeyboard(column.id, index, event.key)
+                    }}
                     onDragStart={(event) => {
                       const payload: DragPayload = {
                         fromColumn: column.id,
@@ -265,6 +304,7 @@ function App() {
                     }}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDrop(event, column.id, index)}
+                    aria-label={`Task ${item.title}. Use arrow keys to reorder or move columns.`}
                   >
                     <strong>{item.title}</strong>
                     <span>{item.characterName}</span>
