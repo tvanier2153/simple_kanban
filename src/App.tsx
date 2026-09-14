@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, DragEvent, FormEvent } from 'react'
+import type { CSSProperties, DragEvent, SubmitEvent } from 'react'
 import { fetchCharacters } from './api/characters'
 import type { Character } from './api/characters'
 import './App.css'
@@ -148,7 +148,7 @@ function App() {
     }
   }
 
-  const onCreateItem = (event: FormEvent<HTMLFormElement>) => {
+  const onCreateItem = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     if (!newTitle.trim() || !selectedCharacterId) {
