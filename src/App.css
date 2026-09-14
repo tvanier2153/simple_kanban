@@ -119,14 +119,17 @@ h1 {
 }
 
 .confetti-piece {
-  animation: burst var(--duration, 900ms) ease-out var(--delay, 0ms) forwards,
-    spin 900ms linear var(--delay, 0ms) forwards;
   font-size: 1.25rem;
   left: calc(66% + var(--x, 0px));
   opacity: 0;
   position: absolute;
   top: 0.75rem;
   will-change: transform, opacity;
+}
+
+.celebrate .confetti-piece {
+  animation: burst var(--duration, 900ms) ease-out var(--delay, 0ms) forwards,
+    spin 900ms linear var(--delay, 0ms) forwards;
 }
 
 .celebrate .column:last-child {
