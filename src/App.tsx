@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, DragEvent, FormEvent } from 'react'
+import { fetchCharacters } from './api/characters'
+import type { Character } from './api/characters'
 import './App.css'
 
 type ColumnId = 'todo' | 'doing' | 'done'
-
-type Character = {
-  id: string
-  name: string
-  image: string
-}
 
 type Item = {
   id: string
@@ -49,50 +45,16 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const fetchCharacters = async () => {
+    const load = async () => {
       setLoadingCharacters(true)
       setCharacterError('')
       try {
-        const response = await fetch('https://rickandmortyapi.com/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: `
-              query Characters {
-                characters(page: 1) {
-                  results {
-                    id
-                    name
-                    image
-                  }
-                }
-              }
-            `,
-          }),
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to load characters')
-        }
-
-        const result: {
-          data?: { characters?: { results?: Character[] } }
-          errors?: Array<{ message: string }>
-        } = await response.json()
-
-        if (result.errors?.length) {
-          throw new Error(result.errors[0].message)
-        }
-
-        setCharacters(result.data?.characters?.results ?? [])
+        const results = await fetchCharacters(controller.signal)
+        setCharacters(results)
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return
         }
-
         setCharacterError('Could not load Rick and Morty characters.')
       } finally {
         if (!controller.signal.aborted) {
@@ -101,7 +63,7 @@ function App() {
       }
     }
 
-    void fetchCharacters()
+    void load()
 
     return () => controller.abort()
   }, [])
